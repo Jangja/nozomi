@@ -231,6 +231,25 @@ KPPHandIndex[8] =
   8   //Gold
 };
 
+#ifdef Apery 
+enum PieceValue
+{
+  kPawnValue = 90,
+  kLanceValue = 315,
+  kKnightValue = 405,
+  kSilverValue = 495,
+  kGoldValue = 540,
+  kProSilverValue = 540,
+  kProLanceValue = 540,
+  kProKnightValue = 540,
+  kProPawnValue = 540,
+  kBishopValue = 855,
+  kRookValue = 990,
+  kHorseValue = 945,
+  kDragonValue = 1395,
+  kKingValue = 15000
+};
+#else
 enum PieceValue
 {
   kPawnValue      = 86,
@@ -248,6 +267,7 @@ enum PieceValue
   kDragonValue    = 946,
   kKingValue      = 15000
 };
+#endif
 
 constexpr int
 PieceValueTable[kPieceTypeMax] =
@@ -322,8 +342,23 @@ init();
 extern Value 
 evaluate(const Position &pos, SearchStack *ss);
 
+#ifdef Apery
+#ifdef TWIG
+typedef std::array<int16_t, 2> ValueKpp;
+typedef std::array<int32_t, 2> ValueKkp;
+typedef std::array<int32_t, 2> ValueKk;
+#else
+typedef int16_t ValueKpp;
+typedef int32_t ValueKkp;
+typedef int32_t ValueKk;
+#endif
+extern int16_t KPP[kBoardSquare][kFEEnd][kFEEnd];
+extern int32_t KKP[kBoardSquare][kBoardSquare][kFEEnd];
+extern int32_t KK[kBoardSquare][kBoardSquare];
+#else
 extern int16_t KPP[kBoardSquare][kFEEnd][kFEEnd];
 extern int16_t KKP[kBoardSquare][kBoardSquare][kFEEnd];
+#endif
 
 } // namespace Eval
 

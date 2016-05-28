@@ -378,8 +378,13 @@ Position::set(const std::string &sfen, Thread *t)
     if (squares_[i] != kEmpty && squares_[i] != kBlackKing && squares_[i] != kWhiteKing)
     {
       state_->kpp_list_index[i] = list_index;
+#ifdef Apery
+      state_->black_kpp_list[list_index] = PieceToIndexBlackTable[squares_[i]] + conv(i);
+      state_->white_kpp_list[list_index] = PieceToIndexWhiteTable[squares_[i]] + conv(inv(i));
+#else
       state_->black_kpp_list[list_index] = PieceToIndexBlackTable[squares_[i]] + i;
       state_->white_kpp_list[list_index] = PieceToIndexWhiteTable[squares_[i]] + inverse((Square)i);
+#endif
       ++list_index;
     }
   }
@@ -457,8 +462,13 @@ Position::do_move(Move m, StateInfo &new_state, bool gives_check)
     int hand_num   = number_of(hand_[us], drop) + 1;
     int list_index = state_->kpp_list_index[PieceTypeToSquareHandTable[us][drop] + hand_num];
     assert(list_index < 38);
+#ifdef Apery
+    state_->black_kpp_list[list_index] = PieceToIndexBlackTable[squares_[to]] + conv(to);
+    state_->white_kpp_list[list_index] = PieceToIndexWhiteTable[squares_[to]] + conv(inverse(to));
+#else
     state_->black_kpp_list[list_index] = PieceToIndexBlackTable[squares_[to]] + to;
     state_->white_kpp_list[list_index] = PieceToIndexWhiteTable[squares_[to]] + inverse(to);
+#endif
     state_->kpp_list_index[to]         = list_index;
     state_->list_index_move            = list_index;
   }
@@ -522,8 +532,13 @@ Position::do_move(Move m, StateInfo &new_state, bool gives_check)
       int kpp_index = state_->kpp_list_index[from];
       assert(kpp_index < 38);
       state_->kpp_list_index[to] = kpp_index;
+#ifdef Apery
+      state_->black_kpp_list[kpp_index] = PieceToIndexBlackTable[squares_[to]] + conv(to);
+      state_->white_kpp_list[kpp_index] = PieceToIndexWhiteTable[squares_[to]] + conv(inverse(to));
+#else
       state_->black_kpp_list[kpp_index] = PieceToIndexBlackTable[squares_[to]] + to;
       state_->white_kpp_list[kpp_index] = PieceToIndexWhiteTable[squares_[to]] + inverse(to);
+#endif
       state_->list_index_move = kpp_index;
     }
   }

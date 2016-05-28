@@ -30,8 +30,17 @@
 
 namespace Eval
 {
+#ifdef Apery
+#define KKP_BIN "KKP_synthesized.bin"
+#define KPP_BIN "KPP_synthesized.bin"
+#define KK_BIN "KK_synthesized.bin"
+int16_t KPP[kBoardSquare][kFEEnd][kFEEnd];
+int32_t KKP[kBoardSquare][kBoardSquare][kFEEnd];
+int32_t KK[kBoardSquare][kBoardSquare];
+#else
 int16_t KPP[kBoardSquare][kFEEnd][kFEEnd];
 int16_t KKP[kBoardSquare][kBoardSquare][kFEEnd];
+#endif
 
 Value
 calc_full(const Position &pos, SearchStack *ss)
@@ -41,13 +50,23 @@ calc_full(const Position &pos, SearchStack *ss)
 
   int score = 0;
 
+#ifdef Apery
+  Square sq_black_king     = conv_sq(pos.square_king(kBlack));
+  Square sq_white_king     = conv_sq(pos.square_king(kWhite));
+  Square inv_sq_white_king = inverse(sq_white_king);
+#else
   Square sq_black_king = pos.square_king(kBlack);
   Square sq_white_king = pos.square_king(kWhite);
   Square inv_sq_white_king = inverse(pos.square_king(kWhite));
-    
+#endif
+
   int black_kpp = 0;
   int white_kpp = 0;
   int kkp = KKP[sq_black_king][sq_white_king][list_black[0]];
+#ifdef Apery
+  kkp += KK[sq_black_king][sq_white_king];
+#endif
+
   for (int i = 1; i < kListNum; ++i)
   {
     int k0 = list_black[i];
@@ -74,9 +93,15 @@ calc_full(const Position &pos, SearchStack *ss)
 void
 calc_no_capture_difference(const Position &pos, SearchStack *ss)
 {
+#ifdef Apery
+  Square    black_king        = conv_sq(pos.square_king(kBlack));
+  Square    white_king        = conv_sq(pos.square_king(kWhite));
+  Square    inv_white_king    = inverse(white_king);
+#else
   Square    black_king        = pos.square_king(kBlack);
   Square    white_king        = pos.square_king(kWhite);
   Square    inv_white_king    = inverse(white_king);
+#endif
 
   const int *prev_list_black   = pos.prev_black_kpp_list();
   const int *prev_list_white   = pos.prev_white_kpp_list();
@@ -117,9 +142,15 @@ calc_no_capture_difference(const Position &pos, SearchStack *ss)
 void
 calc_difference_capture(const Position &pos, SearchStack *ss)
 {
+#ifdef Apery
+  Square    black_king        = conv_sq(pos.square_king(kBlack));
+  Square    white_king        = conv_sq(pos.square_king(kWhite));
+  Square    inv_white_king    = inverse(white_king);
+#else
   Square    black_king        = pos.square_king(kBlack);
   Square    white_king        = pos.square_king(kWhite);
   Square    inv_white_king    = inverse(white_king);
+#endif
 
   const int *prev_list_black   = pos.prev_black_kpp_list();
   const int *prev_list_white   = pos.prev_white_kpp_list();
@@ -186,14 +217,23 @@ calc_difference_king_move_no_capture(const Position &pos, SearchStack *ss)
 {
   const int *list_black = pos.black_kpp_list();
   const int *list_white = pos.white_kpp_list();
+#ifdef Apery
+  const Square sq_black_king = conv_sq(pos.square_king(kBlack));
+  const Square sq_white_king = conv_sq(pos.square_king(kWhite));
+  Square inv_sq_white_king   = inverse(sq_white_king);
+#else
   const Square sq_black_king = pos.square_king(kBlack);
   const Square sq_white_king = pos.square_king(kWhite);
   Square inv_sq_white_king = inverse(pos.square_king(kWhite));
+#endif
 
   int black_kpp = 0;
   int white_kpp = 0;
   const auto *kkp_table = KKP[sq_black_king][sq_white_king];
   int kkp = kkp_table[list_black[0]];
+#ifdef Apery
+  kkp += KK[sq_black_king][sq_white_king];
+#endif
   if (kColor == kBlack)
   {
     const auto *black_kpp_table = KPP[sq_black_king];
@@ -274,7 +314,7 @@ evaluate(const Position &pos, SearchStack *ss)
   {
     calc_difference(pos, last_move, ss);
     score = ss->black_kpp + ss->white_kpp + ss->kkp + ss->material;
-
+    if (score != calc_full(pos, ss))abort();
     assert(calc_full(pos, ss) == score);
     ss->evaluated = true;
     score = pos.side_to_move() == kWhite ? -score : score;
@@ -300,6 +340,32 @@ evaluate(const Position &pos, SearchStack *ss)
 bool
 init() 
 {
+#ifdef Apery
+  do {
+    // KK
+    std::ifstream ifsKK(KK_BIN, std::ios::binary);
+    if (ifsKK) ifsKK.read(reinterpret_cast<char*>(KK), sizeof(KK));
+    else goto Error;
+
+    // KKP
+    std::ifstream ifsKKP(KKP_BIN, std::ios::binary);
+    if (ifsKKP) ifsKKP.read(reinterpret_cast<char*>(KKP), sizeof(KKP));
+    else goto Error;
+
+    // KPP
+    std::ifstream ifsKPP(KPP_BIN, std::ios::binary);
+    if (ifsKPP) ifsKPP.read(reinterpret_cast<char*>(KPP), sizeof(KPP));
+    else goto Error;
+
+  } while (0);
+
+  return true;
+
+Error:;
+  std::cout << "\ninfo string open evaluation file failed.\n";
+  //    cout << "\nERROR open evaluation file failed.\n";
+  // 評価関数ファイルの読み込みに失敗した場合、思考を開始しないように抑制したほうがいいと思う。
+#else
   std::ifstream ifs("new_fv.bin", std::ios::in | std::ios::binary);
   if (!ifs)
   {
@@ -312,5 +378,7 @@ init()
   ifs.close();
 
   return true;
+#endif
+
 }
 } // namespace Eval
