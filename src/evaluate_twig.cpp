@@ -16,8 +16,6 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef TWIG
-
 #include <algorithm>
 #include <cassert>
 #include <iomanip>
@@ -32,17 +30,12 @@
 
 namespace Eval
 {
-#ifdef Apery
 #define KKP_BIN "KKP_synthesized.bin"
 #define KPP_BIN "KPP_synthesized.bin"
 #define KK_BIN "KK_synthesized.bin"
-int16_t KPP[kBoardSquare][kFEEnd][kFEEnd];
-int32_t KKP[kBoardSquare][kBoardSquare][kFEEnd];
-int32_t KK[kBoardSquare][kBoardSquare];
-#else
-int16_t KPP[kBoardSquare][kFEEnd][kFEEnd];
-int16_t KKP[kBoardSquare][kBoardSquare][kFEEnd];
-#endif
+ValueKpp KPP[kBoardSquare][kFEEnd][kFEEnd];
+ValueKkp KKP[kBoardSquare][kBoardSquare][kFEEnd];
+ValueKk KK[kBoardSquare][kBoardSquare];
 
 Value
 calc_full(const Position &pos, SearchStack *ss)
@@ -50,48 +43,40 @@ calc_full(const Position &pos, SearchStack *ss)
   int *list_black = pos.black_kpp_list();
   int *list_white = pos.white_kpp_list();
 
-  int score = 0;
+  const Square sq_bk     = conv_sq(pos.square_king(kBlack));
+  const Square sq_wk     = conv_sq(pos.square_king(kWhite));
+  const auto* ppkppb = KPP[sq_bk];
+  const auto* ppkppw = KPP[inverse(sq_wk)];
 
-#ifdef Apery
-  Square sq_black_king     = conv_sq(pos.square_king(kBlack));
-  Square sq_white_king     = conv_sq(pos.square_king(kWhite));
-  Square inv_sq_white_king = inverse(sq_white_king);
-#else
-  Square sq_black_king = pos.square_king(kBlack);
-  Square sq_white_king = pos.square_king(kWhite);
-  Square inv_sq_white_king = inverse(pos.square_king(kWhite));
-#endif
+  EvalSum sum;
+  sum.p[2] = KK[sq_bk][sq_wk];
+  sum.p[0][0] = 0;
+  sum.p[0][1] = 0;
+  sum.p[1][0] = 0;
+  sum.p[1][1] = 0;
 
-  int black_kpp = 0;
-  int white_kpp = 0;
-  int kkp = KKP[sq_black_king][sq_white_king][list_black[0]];
-#ifdef Apery
-  kkp += KK[sq_black_king][sq_white_king];
-#endif
-
-  for (int i = 1; i < kListNum; ++i)
+  for (int i = 0; i < kListNum; ++i)
   {
-    int k0 = list_black[i];
-    int k1 = list_white[i];
+    const int k0 = list_black[i];
+    const int k1 = list_white[i];
+    const auto* pkppb = ppkppb[k0];
+    const auto* pkppw = ppkppw[k1];
     for (int j = 0; j < i; ++j)
     {
-      int l0 = list_black[j];
-      int l1 = list_white[j];
-      black_kpp += KPP[sq_black_king][k0][l0];
-      white_kpp -= KPP[inv_sq_white_king][k1][l1];
+      const int l0 = list_black[j];
+      const int l1 = list_white[j];
+      sum.p[0] += pkppb[l0];
+      sum.p[1] += pkppw[l1];
     }
-    kkp += KKP[sq_black_king][sq_white_king][k0];
+    sum.p[2] += KKP[sq_bk][sq_wk][k0];
   }
 
-  ss->black_kpp = static_cast<Value>(black_kpp);
-  ss->white_kpp = static_cast<Value>(white_kpp);
-  ss->kkp = static_cast<Value>(kkp);
-  ss->material = static_cast<Value>(pos.material() * kFvScale);
-  score = ss->black_kpp + ss->white_kpp + ss->kkp + ss->material;
+  sum.p[2][0] += static_cast<Value>(pos.material() * kFvScale);
+  ss->staticEvalRaw = sum;
 
-  return static_cast<Value>(score);
+  return static_cast<Value>(sum.sum(pos.side_to_move()) / kFvScale);
 }
-
+#if 0
 void
 calc_no_capture_difference(const Position &pos, SearchStack *ss)
 {
@@ -304,13 +289,19 @@ calc_difference(const Position &pos, Move last_move, SearchStack *ss)
     }
   }
 }
-
+#endif
 
 Value
 evaluate(const Position &pos, SearchStack *ss)
 {
   Value score;
 
+#if 1
+  score = calc_full(pos, ss);
+  ss->evaluated = true;
+
+  assert(score > -kValueInfinite && score < kValueInfinite);
+#else
   Move last_move = (ss - 1)->current_move;
   if ((ss - 1)->evaluated && !(move_piece_type(last_move) == kKing && move_is_capture(last_move)) && is_ok(last_move))
   {
@@ -335,14 +326,14 @@ evaluate(const Position &pos, SearchStack *ss)
 
     assert(score > -kValueInfinite && score < kValueInfinite);
   }
-
+#endif
   return score + kTempo;
 }
   
 bool
 init() 
 {
-#ifdef Apery
+#ifdef TWIG
   do {
     // KK
     std::ifstream ifsKK(KK_BIN, std::ios::binary);
@@ -384,5 +375,3 @@ Error:;
 
 }
 } // namespace Eval
-
-#endif

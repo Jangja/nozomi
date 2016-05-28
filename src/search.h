@@ -35,6 +35,10 @@
 #include "book.h"
 #include "stats.h"
 
+#ifdef TWIG
+#include "evaluate.h"
+#endif
+
 struct SearchStack 
 {
   Move  *pv;
@@ -43,9 +47,13 @@ struct SearchStack
   Move   excluded_move;
   Move   killers[2];
   Value  static_eval;
+#ifdef TWIG
+  EvalSum staticEvalRaw;
+#else
   Value  black_kpp;
   Value  white_kpp;
   Value  kkp;
+#endif
   Value  material;
   bool   evaluated;
   bool   skip_early_pruning;
