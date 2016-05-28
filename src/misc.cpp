@@ -42,7 +42,11 @@ engine_info(bool to_usi)
   stringstream s;
   stringstream date(__DATE__);
 
+#ifdef Apery
+  s << "nozopery " << kVersion << setfill('0');
+#else
   s << "nozomi " << kVersion << setfill('0');
+#endif
 
   if (kVersion.empty())
   {

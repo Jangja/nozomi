@@ -141,6 +141,24 @@ Right45MaskIndexTable[kBoardSquare] =
   8,  9, 10, 11, 12, 13, 14, 15, 16
 };
 
+#ifdef NO_AVX2
+// byやねうら王
+// for non-AVX2 : software emulationによるpext実装(やや遅い。とりあえず動くというだけ。)
+template<typename T> T pext(T val, T mask)
+{
+  T res = 0;
+  for (T bb = 1; mask; bb += bb) {
+    if (val & mask & -mask)
+      res |= bb;
+    mask &= mask - 1;
+  }
+  return res;
+}
+
+inline uint32_t PEXT32(uint32_t a, uint32_t b) { return pext<uint32_t>(a, b); }
+inline uint64_t PEXT64(uint64_t a, uint64_t b) { return pext<uint64_t>(a, b); }
+#endif
+
 class BitBoard
 {
 public:
@@ -197,7 +215,11 @@ public:
   uint64_t
   magic_index(const BitBoard &mask) const
   {
+#ifdef NO_AVX2
+    return PEXT64(to_uint64(), mask.to_uint64());
+#else
     return _pext_u64(to_uint64(), mask.to_uint64());
+#endif
   }
 
   void
