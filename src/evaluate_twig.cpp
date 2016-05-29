@@ -50,6 +50,24 @@ calc_full(const Position &pos, SearchStack *ss)
 
   EvalSum sum;
   sum.p[2] = KK[sq_bk][sq_wk];
+#if defined USE_AVX2_EVAL || defined USE_SSE_EVAL
+  sum.m[0] = _mm_setzero_si128();
+  for (int i = 0; i < kListNum; ++i) {
+    const int k0 = list_black[i];
+    const int k1 = list_white[i];
+    const auto* pkppb = ppkppb[k0];
+    const auto* pkppw = ppkppw[k1];
+    for (int j = 0; j < i; ++j) {
+      const int l0 = list_black[j];
+      const int l1 = list_white[j];
+      __m128i tmp;
+      tmp = _mm_set_epi32(0, 0, *reinterpret_cast<const int*>(&pkppw[l1][0]), *reinterpret_cast<const int*>(&pkppb[l0][0]));
+      tmp = _mm_cvtepi16_epi32(tmp);
+      sum.m[0] = _mm_add_epi32(sum.m[0], tmp);
+    }
+    sum.p[2] += KKP[sq_bk][sq_wk][k0];
+  }
+#else
   sum.p[0][0] = 0;
   sum.p[0][1] = 0;
   sum.p[1][0] = 0;
@@ -70,6 +88,7 @@ calc_full(const Position &pos, SearchStack *ss)
     }
     sum.p[2] += KKP[sq_bk][sq_wk][k0];
   }
+#endif
 
   ss->material = static_cast<Value>(pos.material() * kFvScale);
   sum.p[2][0] += ss->material;

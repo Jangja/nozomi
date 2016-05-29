@@ -993,12 +993,14 @@ moves_loop:
 
     ss->move_count = ++move_count;
 
+#if 0
     if (root_node && this_thread == Threads.main() && Time.elapsed() > 3000)
     {
       sync_cout << "info depth " << depth
                 << " currmove " << USI::format_move(move)
                 << " currmovenumber " << move_count + this_thread->pv_index_ << sync_endl;
     }
+#endif
 
     if (pv_node)
       (ss + 1)->pv = nullptr;
