@@ -16,6 +16,8 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifdef TWIG
+
 #include <algorithm>
 #include <cassert>
 #include <iomanip>
@@ -370,3 +372,5 @@ Error:;
 
 }
 } // namespace Eval
+
+#endif
