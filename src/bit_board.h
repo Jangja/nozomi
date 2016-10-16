@@ -204,7 +204,7 @@ public:
   uint64_t
   magic_index(const BitBoard &mask) const
   {
-    return _pext_u64(to_uint64(), mask.to_uint64());
+    return pext(to_uint64(), mask.to_uint64());
   }
 
   void

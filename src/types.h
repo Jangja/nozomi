@@ -47,6 +47,32 @@
 #  define FORCE_INLINE  inline
 #endif
 
+// AVX2が使えない環境
+#define NO_AVX2
+
+#if !defined(NO_AVX2)
+#  include <immintrin.h> // Header for _pext_u64() intrinsic
+#  define pext(b, m) _pext_u64(b, m)
+#else
+// byやねうら王
+// for non-AVX2 : software emulationによるpext実装(やや遅い。とりあえず動くというだけ。)
+template<typename T> T pext(T val, T mask)
+{
+  T res = 0;
+  for (T bb = 1; mask; bb += bb) {
+    if (val & mask & -mask)
+      res |= bb;
+    mask &= mask - 1;
+  }
+  return res;
+}
+
+inline uint32_t PEXT32(uint32_t a, uint32_t b) { return pext<uint32_t>(a, b); }
+inline uint64_t PEXT64(uint64_t a, uint64_t b) { return pext<uint64_t>(a, b); }
+
+#  define pext(b, m) PEXT64(b, m)
+#endif
+
 typedef uint64_t Key;
 
 constexpr int

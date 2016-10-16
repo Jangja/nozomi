@@ -30,7 +30,11 @@
 
 using namespace std;
 
-static const string kVersion = "";
+#ifdef NO_AVX2
+static const string kVersion = "NOAVX2_20161015";
+#else
+static const string kVersion = "20161015";
+#endif
 
 const string
 engine_info(bool to_usi) 
