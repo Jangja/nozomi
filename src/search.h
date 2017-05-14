@@ -32,10 +32,14 @@
 #include "misc.h"
 #include "position.h"
 #include "types.h"
+#ifdef APERY_BOOK
+#include "apery_book.h"
+#else
 #include "book.h"
+#endif
 #include "stats.h"
 
-struct SearchStack 
+struct SearchStack
 {
   Move  *pv;
   int    ply;
@@ -43,17 +47,13 @@ struct SearchStack
   Move   excluded_move;
   Move   killers[2];
   Value  static_eval;
-  Value  black_kpp;
-  Value  white_kpp;
-  Value  kkp;
-  Value  kkpt;
+  Eval::EvalParts eval_parts;
   Value  material;
   bool   evaluated;
-  bool   skip_early_pruning;
   int    move_count;
+  int    history;
   CounterMoveStats *counter_moves;
 };
-
 namespace Search 
 {
 struct RootMove 
@@ -131,7 +131,11 @@ typedef std::unique_ptr<std::stack<StateInfo>> StateStackPtr;
 extern SignalsType   Signals;
 extern LimitsType    Limits;
 extern StateStackPtr SetupStates;
+#ifdef APERY_BOOK
+extern AperyBook     BookManager;
+#else
 extern Book          BookManager;
+#endif
 
 void
 init();

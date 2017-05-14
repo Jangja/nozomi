@@ -28,6 +28,10 @@
 #include "book.h"
 #include "learn.h"
 #include "reinforcer.h"
+#include "kifu_maker.h"
+#ifdef APERY_BOOK
+#include "apery_book.h"
+#endif
 
 int
 main(int argc, char* argv[]) 
@@ -44,8 +48,13 @@ main(int argc, char* argv[])
 
   TT.resize(Options["USI_Hash"]);
 
+#ifdef APERY_BOOK
+  AperyBook::init();
+#else
   if (Options["OwnBook"])
     Search::BookManager.open(Options["BookFile"]);
+#endif
+
 #ifndef LEARN
   USI::loop(argc, argv);
 #else
@@ -65,8 +74,12 @@ main(int argc, char* argv[])
   }
   else if (type == "reinforce")
   {
-    std::unique_ptr<Reinforcer> leinforcer(new Reinforcer);
-    leinforcer->reinforce(is);
+    std::unique_ptr<Reinforcer> reinforcer(new Reinforcer);
+    reinforcer->reinforce(is);
+  }
+  else if (type == "kifu")
+  {
+    KifuMaker::make(is);
   }
 #endif
   Threads.exit();
