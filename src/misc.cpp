@@ -31,9 +31,9 @@
 using namespace std;
 
 #ifdef NO_AVX2
-static const string kVersion = "NOAVX2_20161015";
+static const string kVersion = "NOAVX2_20170514";
 #else
-static const string kVersion = "20161015";
+static const string kVersion = "20170514";
 #endif
 
 const string
